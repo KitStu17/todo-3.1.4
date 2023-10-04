@@ -1,5 +1,6 @@
 package com.example.todo314.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -133,6 +134,42 @@ public class TodoController {
             // ResponseDTO.<String>builder().data(message).build();
 
             return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            String error = e.getMessage();
+            ResponseDTO<TodoDTO> response = ResponseDTO.<TodoDTO>builder().error(error).build();
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @DeleteMapping("/deleteList")
+    public ResponseEntity<?> deleteList(@AuthenticationPrincipal String userId, @RequestBody List<TodoDTO> dtos) {
+        try {
+            // DELETE localhost:8080/todo/deleteList
+            List<TodoEntity> requestEntities = new ArrayList<TodoEntity>();
+
+            // requestEntities에 삭제할 목록의 entity를 저장
+            for (TodoDTO dto : dtos) {
+                TodoEntity entity = TodoDTO.toEntity(dto);
+                entity.setUserId(userId);
+                requestEntities.add(entity);
+            }
+
+            // 목록 삭제
+            for (TodoEntity entity : requestEntities) {
+                service.delete(entity);
+            }
+
+            List<TodoEntity> entities = service.retrieve(userId);
+
+            // entities를 dtos로 스트림 변환
+            List<TodoDTO> responseDtos = entities.stream().map(TodoDTO::new).collect(Collectors.toList());
+
+            // ResponseDTO 생성
+            ResponseDTO<TodoDTO> response = ResponseDTO.<TodoDTO>builder().data(responseDtos).build();
+
+            return ResponseEntity.ok().body(response);
+
         } catch (Exception e) {
             String error = e.getMessage();
             ResponseDTO<TodoDTO> response = ResponseDTO.<TodoDTO>builder().error(error).build();

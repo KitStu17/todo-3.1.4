@@ -1,5 +1,7 @@
 package com.example.todo314.service;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,11 +34,26 @@ public class UserService {
         return userRepository.save(userEntity);
     }
 
+    public Optional<UserEntity> updateUser(final UserEntity entity) {
+
+        if (userRepository.existsById(entity.getId())) {
+            userRepository.save(entity);
+        } else {
+            throw new RuntimeException("Unknown id");
+        }
+
+        return userRepository.findById(entity.getId());
+    }
+
     public UserEntity getByCredentials(final String email, final String password, final PasswordEncoder encoder) {
         final UserEntity originalUser = userRepository.findByEmail(email);
         if (originalUser != null && encoder.matches(password, originalUser.getPassword())) {
             return originalUser;
         }
         return null;
+    }
+
+    public Optional<UserEntity> findById(String userId) {
+        return userRepository.findById(userId);
     }
 }

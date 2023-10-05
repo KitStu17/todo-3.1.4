@@ -1,10 +1,15 @@
 package com.example.todo314.controller;
 
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +20,7 @@ import com.example.todo314.model.UserEntity;
 import com.example.todo314.security.TokenProvider;
 import com.example.todo314.service.UserService;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,6 +35,40 @@ public class UserController {
     private TokenProvider tokenProvider;
 
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    @GetMapping("/getUser")
+    public ResponseEntity<?> retrieveUser(@AuthenticationPrincipal String userId) {
+        try {
+            UserEntity user = userService.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            return ResponseEntity.ok().body(user);
+        } catch (Exception e) {
+            ResponseDTO responseDTO = ResponseDTO.builder().error(e.getMessage()).build();
+
+            return ResponseEntity.badRequest().body(responseDTO);
+        }
+    }
+
+    @PutMapping("/updateUser")
+    public ResponseEntity<?> updateUser(@AuthenticationPrincipal String userId, @RequestBody UserDTO userDTO) {
+        try {
+            UserEntity user = userService.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            user.setEmail(userDTO.getEmail());
+            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+            user.setUsername(userDTO.getUsername());
+
+            UserEntity responseEntity = userService.updateUser(user)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+            return ResponseEntity.ok().body(responseEntity);
+
+        } catch (Exception e) {
+            ResponseDTO responseDTO = ResponseDTO.builder().error(e.getMessage()).build();
+
+            return ResponseEntity.badRequest().body(responseDTO);
+        }
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {

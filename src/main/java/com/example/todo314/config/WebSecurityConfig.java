@@ -57,6 +57,7 @@ public class WebSecurityConfig {
                         .requestMatchers(
                                 new AntPathRequestMatcher("/"),
                                 new AntPathRequestMatcher("/auth/**"),
+                                new AntPathRequestMatcher("/mail/**"),
                                 new AntPathRequestMatcher("/h2-console/**"))
                         .permitAll();
             } catch (Exception e) {
